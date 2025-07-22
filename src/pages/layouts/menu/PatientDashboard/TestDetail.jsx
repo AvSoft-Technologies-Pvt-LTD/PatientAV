@@ -13,7 +13,7 @@ const TestDetail = () => {
   const navigate = useNavigate();
   const iconColor = "text-[var(--primary-color)]";
   useEffect(() => {
-    axios .get('https://mocki.io/v1/74ac3016-49a3-4cef-992c-a24c681f3a9f')
+    axios .get('https://mocki.io/v1/819026ae-4da2-46a6-9acb-2e9e2c99e019')
       .then((res) => {
         const found = Array.isArray(res.data)
           ? res.data.find((i) => i.id.toString() === id)

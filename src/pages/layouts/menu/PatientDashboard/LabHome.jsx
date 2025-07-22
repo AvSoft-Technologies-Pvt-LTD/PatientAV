@@ -26,7 +26,7 @@ const LabHome = () => {
     { searchQuery, setSearchQuery, performSearch } = useSearch(),
     cartRef = useRef(null),
     btnRefs = useRef({});
-  const MOCK_API_URL = 'https://mocki.io/v1/2044f255-af2a-46b7-971f-62348b9c329c';
+  const MOCK_API_URL = 'https://mocki.io/v1/0aeb8233-e477-46f8-9713-373a90796139';
 
   useEffect(() => {
     setLoading(true);

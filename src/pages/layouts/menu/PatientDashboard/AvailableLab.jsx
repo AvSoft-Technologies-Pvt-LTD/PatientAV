@@ -11,7 +11,7 @@ const AvailableLabs = () => {
   const [locationFilter, setLocationFilter] = useState('');
   const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
   useEffect(() => {
-    axios.get("https://mocki.io/v1/be7e6ea6-c6f0-4df5-b0d4-59aaae8e8b80")
+    axios.get("https://mocki.io/v1/d5770a08-fead-4268-8dd1-41da555ba331")
       .then((res) => { setLabs(res.data); setFilteredLabs(res.data); })
       .catch((err) => console.error("Lab API Error:", err));}, []);
   const handleFilter = () => {
