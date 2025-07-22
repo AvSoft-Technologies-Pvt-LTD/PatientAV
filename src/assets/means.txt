@@ -1,0 +1,480 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+const LabDashboard = () => {
+  const [labDetails, setLabDetails] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLabDetails = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("https://680b3642d5075a76d98a3658.mockapi.io/Lab/payment");
+      setLabDetails(response.data);
+    } catch (error) {
+      console.error("Error fetching lab details", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLabDetails();
+  }, []);
+
+  if (loading) {
+    return <div>Loading lab details...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Lab Dashboard</h1>
+      <h2>Payment Summary</h2>
+
+      {labDetails.length === 0 ? (
+        <div>No lab details available.</div>
+      ) : (
+        <table border="1" cellPadding="10" cellSpacing="0">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Patient Name</th>
+              <th>Test Title</th>
+              <th>Lab Name</th>
+              <th>Amount Paid</th>
+              <th>Payment Status</th>
+              <th>Payment Method</th>
+              <th>Transaction ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {labDetails.map((lab) => (
+              <tr key={lab.id}>
+                <td>{lab.bookingId}</td>
+                <td>{lab.patientName}</td>
+                <td>{lab.testTitle}</td>
+                <td>{lab.labName}</td>
+                <td>${lab.amountPaid}</td>
+                <td>{lab.paymentStatus}</td>
+                <td>{lab.paymentMethod}</td>
+                <td>{lab.upiTransactionId || lab.netBankingTransactionId}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
+export default LabDashboard;
+
+
+
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { FaDownload } from "react-icons/fa";
+
+// Status badge color helper
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case "Appointment Confirmed":
+      return "bg-blue-100 text-blue-800";
+    case "Technician On the Way":
+      return "bg-yellow-100 text-yellow-800";
+    case "Sample Collected":
+      return "bg-purple-100 text-purple-800";
+    case "Test Processing":
+      return "bg-orange-100 text-orange-800";
+    case "Report Ready":
+      return "bg-green-100 text-green-800";
+    case "Cancelled":
+      return "bg-red-100 text-red-600";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const AppointmentList = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [activeTab, setActiveTab] = useState("doctor"); // New state for tabs (doctor or lab)
+
+  useEffect(() => {
+    // Change the API endpoint based on the active tab
+    const apiUrl =
+      activeTab === "doctor"
+        ? "https://67e3e1e42ae442db76d2035d.mockapi.io/register/book"
+        : "https://680b3642d5075a76d98a3658.mockapi.io/Lab/payment";
+
+    axios
+      .get(apiUrl)
+      .then((res) => {
+        setAppointments(res.data); // Load appointments from the respective API
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching appointments:", err);
+        setLoading(false);
+      });
+  }, [activeTab]);
+
+  const handleDownloadReport = (appointment) => {
+    const link = document.createElement("a");
+    link.href =
+      appointment?.reportUrl ||
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+    link.download = `${appointment?.testTitle || "Lab_Report"}.pdf`;
+    link.click();
+  };
+
+  const filteredAppointments = appointments.filter((appt) => {
+    const matchesSearch =
+      appt.testTitle
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) || appt.doctorName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter ? appt.status === statusFilter : true;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) return <div className="p-6">Loading appointments...</div>;
+
+  if (appointments.length === 0)
+    return <div className="p-6">No appointments found.</div>;
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold mb-4">My Appointments</h1>
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-4">
+        <button
+          onClick={() => setActiveTab("doctor")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${
+            activeTab === "doctor"
+              ? "bg-[#0E1630] text-white"
+              : "bg-gray-200 text-[#0E1630]"
+          }`}
+        >
+          Doctor Appointments
+        </button>
+        <button
+          onClick={() => setActiveTab("lab")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${
+            activeTab === "lab" ? "bg-[#0E1630] text-white" : "bg-gray-200 text-[#0E1630]"
+          }`}
+        >
+          Lab Appointments
+        </button>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+        <input
+          type="text"
+          placeholder="Search by test name or doctor name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-1/2"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-1/3"
+        >
+          <option value="">All Statuses</option>
+          <option value="Appointment Confirmed">Appointment Confirmed</option>
+          <option value="Technician On the Way">Technician On the Way</option>
+          <option value="Sample Collected">Sample Collected</option>
+          <option value="Test Processing">Test Processing</option>
+          <option value="Report Ready">Report Ready</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {/* Appointments Table */}
+      <div className="overflow-x-auto rounded-2xl shadow-xl bg-white border border-gray-100">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-slate-800 text-white text-xs uppercase font-semibold">
+            <tr>
+              {activeTab === "doctor" && (
+                <>
+                  <th className="px-6 py-4 text-left">Doctor Name</th>
+                  <th className="px-6 py-4 text-left">Specialty</th>
+                </>
+              )}
+              {activeTab === "lab" && (
+                <>
+                  <th className="px-6 py-4 text-left">Test Name</th>
+                  <th className="px-6 py-4 text-left">Lab Name</th>
+                </>
+              )}
+              <th className="px-6 py-4 text-left">Status</th>
+              <th className="px-6 py-4 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredAppointments.length > 0 ? (
+              filteredAppointments.map((appointment) => (
+                <tr key={appointment.id} className="hover:bg-yellow-50 transition duration-200">
+                  {activeTab === "doctor" && (
+                    <>
+                      <td className="px-6 py-4">{appointment.doctorName || "N/A"}</td>
+                      <td className="px-6 py-4">{appointment.specialty || "N/A"}</td>
+                    </>
+                  )}
+                  {activeTab === "lab" && (
+                    <>
+                      <td className="px-6 py-4">{appointment.testName || "N/A"}</td>
+                      <td className="px-6 py-4">{appointment.labName || "N/A"}</td>
+                    </>
+                  )}
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(appointment.status)}`}
+                    >
+                      {appointment.status || "Pending"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {appointment.status !== "Cancelled" && (
+                      <button
+                        onClick={() => handleDownloadReport(appointment)}
+                        className="px-4 py-1.5 bg-slate-800 text-white rounded-full text-xs font-semibold hover:bg-yellow-500 transition-all duration-300 focus:ring-2 focus:ring-yellow-300"
+                      >
+                        <FaDownload className="inline mr-2" />
+                        Download Report
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={activeTab === "doctor" ? 4 : 3} className="text-center px-6 py-10 text-gray-400 text-base">
+                  No appointments found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default AppointmentList;
+
+
+
+
+
+
+
+
+
+
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { FaDownload } from "react-icons/fa";
+
+// Status badge color helper
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case "Appointment Confirmed":
+      return "bg-blue-100 text-blue-800";
+    case "Technician On the Way":
+      return "bg-yellow-100 text-yellow-800";
+    case "Sample Collected":
+      return "bg-purple-100 text-purple-800";
+    case "Test Processing":
+      return "bg-orange-100 text-orange-800";
+    case "Report Ready":
+      return "bg-green-100 text-green-800";
+    case "Cancelled":
+      return "bg-red-100 text-red-600";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const AppointmentList = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [activeTab, setActiveTab] = useState("doctor"); // New state for tabs (doctor or lab)
+
+  useEffect(() => {
+    // Change the API endpoint based on the active tab
+    const apiUrl =
+      activeTab === "doctor"
+        ? "https://67e3e1e42ae442db76d2035d.mockapi.io/register/book"
+        : "https://680b3642d5075a76d98a3658.mockapi.io/Lab/payment";
+
+    axios
+      .get(apiUrl)
+      .then((res) => {
+        setAppointments(res.data); // Load appointments from the respective API
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching appointments:", err);
+        setLoading(false);
+      });
+  }, [activeTab]);
+
+  const handleDownloadReport = (appointment) => {
+    const link = document.createElement("a");
+    link.href =
+      appointment?.reportUrl ||
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+    link.download = ${appointment?.testTitle || "Lab_Report"}.pdf;
+    link.click();
+  };
+
+  const filteredAppointments = appointments.filter((appt) => {
+    const matchesSearch =
+      appt.testTitle
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) || appt.doctorName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter ? appt.status === statusFilter : true;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) return <div className="p-6">Loading appointments...</div>;
+
+  if (appointments.length === 0)
+    return <div className="p-6">No appointments found.</div>;
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold mb-4">My Appointments</h1>
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-4">
+        <button
+          onClick={() => setActiveTab("doctor")}
+          className={px-4 py-2 rounded-full text-sm font-semibold ${
+            activeTab === "doctor"
+              ? "bg-[#0E1630] text-white"
+              : "bg-gray-200 text-[#0E1630]"
+          }}
+        >
+          Doctor Appointments
+        </button>
+        <button
+          onClick={() => setActiveTab("lab")}
+          className={px-4 py-2 rounded-full text-sm font-semibold ${
+            activeTab === "lab" ? "bg-[#0E1630] text-white" : "bg-gray-200 text-[#0E1630]"
+          }}
+        >
+          Lab Appointments
+        </button>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+        <input
+          type="text"
+          placeholder="Search by test name or doctor name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-1/2"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-1/3"
+        >
+          <option value="">All Statuses</option>
+          <option value="Appointment Confirmed">Appointment Confirmed</option>
+          <option value="Technician On the Way">Technician On the Way</option>
+          <option value="Sample Collected">Sample Collected</option>
+          <option value="Test Processing">Test Processing</option>
+          <option value="Report Ready">Report Ready</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {/* Appointments Table */}
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="min-w-full table-auto">
+          <thead className="bg-gray-100">
+            <tr>
+              {activeTab === "doctor" && (
+                <>
+                  <th className="py-2 px-4 text-left text-sm font-semibold">Booking ID</th>
+                  <th className="py-2 px-4 text-left text-sm font-semibold">Doctor</th>
+                  <th className="py-2 px-4 text-left text-sm font-semibold">Specialty</th>
+                </>
+              )}
+              {activeTab === "lab" && (
+                <>
+                  <th className="py-2 px-4 text-left text-sm font-semibold">Booking ID</th>
+                  <th className="py-2 px-4 text-left text-sm font-semibold">Test</th>
+                </>
+              )}
+              <th className="py-2 px-4 text-left text-sm font-semibold">Date</th>
+              <th className="py-2 px-4 text-left text-sm font-semibold">Status</th>
+              <th className="py-2 px-4 text-left text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAppointments.map((appt) => (
+              <tr key={appt.id} className="border-b hover:bg-gray-50">
+                <td className="py-2 px-4 text-sm">{appt.bookingId}</td>
+                {activeTab === "doctor" && (
+                  <>
+                    <td className="py-2 px-4 text-sm">{appt.doctorName}</td>
+                    <td className="py-2 px-4 text-sm">{appt.specialty}</td>
+                  </>
+                )}
+                {activeTab === "lab" && (
+                  <>
+                    <td className="py-2 px-4 text-sm">{appt.testTitle}</td>
+                  </>
+                )}
+                <td className="py-2 px-4 text-sm">
+                  {appt.date ? new Date(appt.date).toDateString() : "N/A"}
+                </td>
+                <td className="py-2 px-4 text-sm">
+                  <span
+                    className={px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(
+                      appt.status
+                    )}}
+                  >
+                    {appt.status || "N/A"}
+                  </span>
+                </td>
+                <td className="py-2 px-4 text-sm space-x-2">
+                  <Link
+                    to={/dashboard/track-appointment/${appt.bookingId}}
+                    className="text-blue-500 hover:underline"
+                  >
+                    Track
+                  </Link>
+                  {appt.status === "Report Ready" && (
+                    <button
+                      onClick={() => handleDownloadReport(appt)}
+                      className="text-green-600 hover:underline flex items-center gap-1 inline-flex"
+                    >
+                      <FaDownload className="text-xs" /> Download
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default AppointmentList;
