@@ -32,7 +32,7 @@ const ProductsPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://mocki.io/v1/7fca606c-abc8-4397-b797-a380fc8be7d7');
+        const response = await axios.get('https://mocki.io/v1/71313176-f5f5-4af7-984e-cbfe37307bef');
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);

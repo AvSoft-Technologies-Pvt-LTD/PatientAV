@@ -15,7 +15,7 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get('https://mocki.io/v1/7fca606c-abc8-4397-b797-a380fc8be7d7');
+        const res = await axios.get('https://mocki.io/v1/71313176-f5f5-4af7-984e-cbfe37307bef');
         const found = res.data.find((p) => String(p.id) === id);
         setProduct(found);
       } catch (err) {
