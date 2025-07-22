@@ -685,8 +685,9 @@ const MedicalRecordDetails = ({ recordData, onBack, isNewlyAdded }) => {
         return (
           <div className="space-y-6">
             {/* Upload Section for Prescriptions */}
-      
-{renderUploadSection("prescriptionFiles", "Upload Prescription")}
+                     {renderUploadSection("prescriptionFiles", "Upload Prescription")}
+
+
             {/* Prescriptions Table */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
